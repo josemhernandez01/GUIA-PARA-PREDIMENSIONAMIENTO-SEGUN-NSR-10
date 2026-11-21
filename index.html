@@ -1,0 +1,907 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>PredimNSR-10 | Predimensionamiento Estructural - Universidad de la Costa CUC</title>
+  <link rel="stylesheet" href="style.css">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+</head>
+<body>
+
+  <!-- Top Navigation & Brand -->
+  <header class="app-header">
+    <div class="header-container">
+      <div class="brand">
+        <div class="brand-logo">
+          <svg viewBox="0 0 36 36" width="32" height="32" fill="none">
+            <rect width="36" height="36" rx="8" fill="#1e3a8a"/>
+            <path d="M7 29V7h4v22H7zm7-11h8v4h-8v-4zm0-11h15v4H14V7zm11 11h4v11h-4V18z" fill="#38bdf8"/>
+            <circle cx="27" cy="11" r="2.5" fill="#f59e0b"/>
+          </svg>
+        </div>
+        <div class="brand-text">
+          <h1>PredimNSR-10 <span class="badge-version">CUC v1.0</span></h1>
+          <p class="subtitle">Herramienta Interactiva de Predimensionamiento Estructural | NSR-10 Colombia</p>
+        </div>
+      </div>
+
+      <div class="header-academic-tag">
+        <span class="uni-name">Universidad de la Costa (CUC)</span>
+        <span class="uni-sub">Ingeniería Civil • Barranquilla, Atlántico</span>
+      </div>
+
+      <div class="header-actions">
+        <button id="btn-print-summary" class="btn btn-primary btn-sm" title="Imprimir o exportar ficha de cálculo">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 9V2h12v7M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><path d="M6 14h12v8H6z"/></svg>
+          Exportar Informe
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <!-- Global Seismic Settings Bar -->
+  <section class="seismic-bar">
+    <div class="seismic-bar-inner">
+      <div class="seismic-selector-group">
+        <div class="field-item">
+          <label for="select-ciudad">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2a8 8 0 0 0-8 8c0 5.25 8 12 8 12s8-6.75 8-12a8 8 0 0 0-8-8z"/><circle cx="12" cy="10" r="3"/></svg>
+            Ciudad / Municipio (NSR-10 Apéndice A-4):
+          </label>
+          <select id="select-ciudad" class="form-control">
+            <!-- Ciudades pobladas via JS -->
+          </select>
+        </div>
+
+        <div class="field-item">
+          <label for="select-disipacion">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>
+            Capacidad de Disipación de Energía:
+          </label>
+          <select id="select-disipacion" class="form-control highlight-select">
+            <option value="DMI">DMI - Disipación Mínima (Amenaza Baja)</option>
+            <option value="DMO" selected>DMO - Disipación Moderada (Amenaza Intermedia)</option>
+            <option value="DES">DES - Disipación Especial (Amenaza Alta)</option>
+          </select>
+        </div>
+
+        <div class="field-item">
+          <label for="select-uso">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 21h18M3 7l9-4 9 4v14H3V7z"/></svg>
+            Grupo de Uso (NSR-10 A.2.5):
+          </label>
+          <select id="select-uso" class="form-control">
+            <option value="I" selected>Grupo I - Ocupación Normal (Vivienda, Hoteles, Oficinas) [I = 1.00]</option>
+            <option value="II">Grupo II - Ocupación Especial (Centros comerciales, aglomeraciones > 200 personas) [I = 1.10]</option>
+            <option value="III">Grupo III - Edificaciones de Atención (Escuelas, guarderías, policía) [I = 1.25]</option>
+            <option value="IV">Grupo IV - Edificaciones Indispensables (Hospitales, bomberos, centros emergencia) [I = 1.50]</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="seismic-live-badge" id="seismic-status-badge">
+        <div class="badge-indicator dmo-bg"></div>
+        <div class="badge-content">
+          <div class="badge-title">Zona Seleccionada: <strong id="lbl-ciudad-nombre">Barranquilla</strong></div>
+          <div class="badge-details" id="lbl-seismic-params">Aa = 0.10 | Av = 0.10 | Sistema Requerido: DMO</div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Navigation Tabs -->
+  <nav class="nav-tabs">
+    <div class="tabs-container">
+      <button class="tab-btn active" data-tab="tab-vigas">
+        <span class="tab-icon">📐</span>
+        <span class="tab-label">1. Vigas de Concreto</span>
+      </button>
+      <button class="tab-btn" data-tab="tab-columnas">
+        <span class="tab-icon">🏛️</span>
+        <span class="tab-label">2. Columnas</span>
+      </button>
+      <button class="tab-btn" data-tab="tab-losa-maciza">
+        <span class="tab-icon">⬛</span>
+        <span class="tab-label">3. Losa Maciza</span>
+      </button>
+      <button class="tab-btn" data-tab="tab-losa-aligerada">
+        <span class="tab-icon">🧇</span>
+        <span class="tab-label">4. Losa Aligerada (Nervada)</span>
+      </button>
+      <button class="tab-btn" data-tab="tab-normativa">
+        <span class="tab-icon">📖</span>
+        <span class="tab-label">5. Criterios NSR-10 & Fórmulas</span>
+      </button>
+    </div>
+  </nav>
+
+  <!-- Main Content Layout -->
+  <main class="main-wrapper">
+
+    <!-- ========================================== -->
+    <!-- TAB 1: PREDIMENSIONAMIENTO DE VIGAS        -->
+    <!-- ========================================== -->
+    <section id="tab-vigas" class="tab-panel active">
+      <div class="panel-header">
+        <div>
+          <h2>Predimensionamiento de Vigas de Concreto Estructural</h2>
+          <p class="panel-desc">Calcula el peralte mínimo ($h$) para control de deflexiones (NSR-10 Tabla C.9.5(a)) y la base ($b$) según restricciones sísmicas del Título C.21 (DMI, DMO, DES).</p>
+        </div>
+        <span class="code-ref">NSR-10 Arts. C.9.5, C.21.3.5, C.21.5.1</span>
+      </div>
+
+      <div class="calc-grid">
+        <!-- Input Parameters Card -->
+        <div class="card inputs-card">
+          <div class="card-header">
+            <h3>Parámetros de Entrada</h3>
+          </div>
+          <div class="card-body">
+            <!-- Luz libre -->
+            <div class="form-group">
+              <div class="label-row">
+                <label for="viga-luz">Luz Libre de la Viga ($L$):</label>
+                <span class="unit-val"><span id="viga-luz-val">6.00</span> m</span>
+              </div>
+              <input type="range" id="viga-luz" min="2.0" max="14.0" step="0.25" value="6.0" class="range-slider">
+              <div class="quick-inputs">
+                <button type="button" class="btn-chip" onclick="setSlider('viga-luz', 4.0)">4.0 m</button>
+                <button type="button" class="btn-chip" onclick="setSlider('viga-luz', 5.5)">5.5 m</button>
+                <button type="button" class="btn-chip" onclick="setSlider('viga-luz', 6.0)">6.0 m</button>
+                <button type="button" class="btn-chip" onclick="setSlider('viga-luz', 7.5)">7.5 m</button>
+                <button type="button" class="btn-chip" onclick="setSlider('viga-luz', 9.0)">9.0 m</button>
+              </div>
+            </div>
+
+            <!-- Condición de Apoyo -->
+            <div class="form-group">
+              <label for="viga-apoyo">Condición de Apoyo (Tabla C.9.5(a)):</label>
+              <select id="viga-apoyo" class="form-control">
+                <option value="16">Simplemente apoyada ($h = L / 16$)</option>
+                <option value="18.5" selected>Un extremo continuo ($h = L / 18.5$)</option>
+                <option value="21">Ambos extremos continuos ($h = L / 21$)</option>
+                <option value="8">En voladizo ($h = L / 8$)</option>
+              </select>
+            </div>
+
+            <!-- Materiales -->
+            <div class="grid-2cols">
+              <div class="form-group">
+                <label for="viga-fc">Resistencia del Concreto ($f'c$):</label>
+                <select id="viga-fc" class="form-control">
+                  <option value="21" selected>21 MPa (3000 psi)</option>
+                  <option value="28">28 MPa (4000 psi)</option>
+                  <option value="35">35 MPa (5000 psi)</option>
+                </select>
+              </div>
+              <div class="form-group">
+                <label for="viga-fy">Fluencia del Acero ($f_y$):</label>
+                <select id="viga-fy" class="form-control">
+                  <option value="420" selected>420 MPa (Grado 60)</option>
+                  <option value="280">280 MPa (Grado 40)</option>
+                </select>
+              </div>
+            </div>
+
+            <!-- Tipo de partición sobre la viga -->
+            <div class="form-group">
+              <label for="viga-particion">Elementos No Estructurales Adosados:</label>
+              <select id="viga-particion" class="form-control">
+                <option value="fragil" selected>Mampostería tradicional / Frágil (Recomendación colombiana $h \approx L/10 - L/12$)</option>
+                <option value="flexible">Drywall o particiones flexibles (Acepta deflexiones normales)</option>
+                <option value="ninguna">Sin muros ni particiones susceptibles de daño</option>
+              </select>
+            </div>
+
+            <!-- Ajuste manual sugerido -->
+            <div class="grid-2cols">
+              <div class="form-group">
+                <div class="label-row">
+                  <label for="viga-h-user">Peralte adoptado ($h$):</label>
+                  <span class="unit-val"><span id="viga-h-user-val">45</span> cm</span>
+                </div>
+                <input type="range" id="viga-h-user" min="20" max="120" step="5" value="45" class="range-slider">
+              </div>
+              <div class="form-group">
+                <div class="label-row">
+                  <label for="viga-b-user">Base adoptada ($b_w$):</label>
+                  <span class="unit-val"><span id="viga-b-user-val">30</span> cm</span>
+                </div>
+                <input type="range" id="viga-b-user" min="15" max="80" step="5" value="30" class="range-slider">
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Output & Real-time Suggestions Card -->
+        <div class="card results-card">
+          <div class="card-header">
+            <h3>Dimensiones Calculadas & Verificación NSR-10</h3>
+          </div>
+          <div class="card-body">
+            <!-- Results KPI row -->
+            <div class="kpi-grid">
+              <div class="kpi-box">
+                <span class="kpi-label">Peralte Mín. Normativo (Tabla C.9.5)</span>
+                <span class="kpi-value" id="res-viga-hmin">32.4 cm</span>
+                <span class="kpi-sub" id="res-viga-hmin-formula">L / 18.5</span>
+              </div>
+              <div class="kpi-box highlight">
+                <span class="kpi-label">Peralte Sugerido (Práctica Col.)</span>
+                <span class="kpi-value" id="res-viga-hsug">45.0 cm</span>
+                <span class="kpi-sub">Múltiplo de 5 cm comercial</span>
+              </div>
+              <div class="kpi-box">
+                <span class="kpi-label">Base Mínima Normativa (<span id="res-viga-disip-tag">DMO</span>)</span>
+                <span class="kpi-value" id="res-viga-bmin">20.0 cm</span>
+                <span class="kpi-sub" id="res-viga-bmin-articulo">NSR-10 C.21.3.5.1</span>
+              </div>
+              <div class="kpi-box highlight">
+                <span class="kpi-label">Base Sugerida ($b \approx h/2$)</span>
+                <span class="kpi-value" id="res-viga-bsug">25.0 cm</span>
+                <span class="kpi-sub">Relación $b/h \ge 0.30$</span>
+              </div>
+            </div>
+
+            <!-- Interactive Vector Diagram -->
+            <div class="diagram-wrapper">
+              <div class="diagram-title">Esquema de Sección Transversal de Viga</div>
+              <svg id="svg-viga" class="structural-svg" viewBox="0 0 320 220"></svg>
+            </div>
+
+            <!-- Checks & Warnings Checklist -->
+            <div class="compliance-checklist" id="viga-checks-list">
+              <!-- Rendered via JS -->
+            </div>
+
+            <!-- Constructive Recommendations Box -->
+            <div class="engineering-advice-box" id="viga-advice-box">
+              <!-- Rendered via JS -->
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ========================================== -->
+    <!-- TAB 2: PREDIMENSIONAMIENTO DE COLUMNAS     -->
+    <!-- ========================================== -->
+    <section id="tab-columnas" class="tab-panel">
+      <div class="panel-header">
+        <div>
+          <h2>Predimensionamiento de Columnas por Carga Axial y Efectos Sísmicos</h2>
+          <p class="panel-desc">Calcula el área gruesa de concreto ($A_g$) requerida según el área tributaria acumulada, número de pisos y ubicación; y evalúa las dimensiones mínimas obligatorias según DMI, DMO o DES.</p>
+        </div>
+        <span class="code-ref">NSR-10 Arts. C.10.8, C.21.3.6, C.21.6.1</span>
+      </div>
+
+      <div class="calc-grid">
+        <!-- Input Parameters Card -->
+        <div class="card inputs-card">
+          <div class="card-header">
+            <h3>Parámetros de Carga y Ubicación</h3>
+          </div>
+          <div class="card-body">
+            <!-- Ubicación de la Columna -->
+            <div class="form-group">
+              <label for="col-tipo">Ubicación de la Columna en Planta:</label>
+              <select id="col-tipo" class="form-control">
+                <option value="interior" selected>Columna Interior / Central (Mayor carga axial, menor momento flector inicial)</option>
+                <option value="borde">Columna Lateral / De Borde (Carga axial media + momento uniaxial por sismo/gravedad)</option>
+                <option value="esquina">Columna de Esquina (Menor área tributaria + flexión biaxial crítica por sismo)</option>
+              </select>
+            </div>
+
+            <!-- Número de Pisos -->
+            <div class="form-group">
+              <div class="label-row">
+                <label for="col-pisos">Número de Pisos Sobre la Columna:</label>
+                <span class="unit-val"><span id="col-pisos-val">5</span> pisos</span>
+              </div>
+              <input type="range" id="col-pisos" min="1" max="25" step="1" value="5" class="range-slider">
+              <div class="quick-inputs">
+                <button type="button" class="btn-chip" onclick="setSlider('col-pisos', 2)">2 p.</button>
+                <button type="button" class="btn-chip" onclick="setSlider('col-pisos', 4)">4 p.</button>
+                <button type="button" class="btn-chip" onclick="setSlider('col-pisos', 6)">6 p.</button>
+                <button type="button" class="btn-chip" onclick="setSlider('col-pisos', 10)">10 p.</button>
+                <button type="button" class="btn-chip" onclick="setSlider('col-pisos', 15)">15 p.</button>
+              </div>
+            </div>
+
+            <!-- Área Tributaria -->
+            <div class="form-group">
+              <div class="label-row">
+                <label for="col-area-trib">Área Tributaria por Piso ($A_t$):</label>
+                <span class="unit-val"><span id="col-area-trib-val">25.0</span> m²</span>
+              </div>
+              <input type="range" id="col-area-trib" min="4.0" max="80.0" step="1.0" value="25.0" class="range-slider">
+              <p class="field-hint">Ejemplo: Para vanos de 5m × 5m, la columna central tiene aprox. $5 \times 5 = 25\text{ m}^2$.</p>
+            </div>
+
+            <!-- Carga de Servicio por Piso -->
+            <div class="form-group">
+              <label for="col-carga-piso">Uso de la Edificación y Carga de Servicio Estimada ($q$):</label>
+              <select id="col-carga-piso" class="form-control">
+                <option value="9.0">Residencial Liviana ($q = 9.0\text{ kN/m}^2 \approx 0.90\text{ ton/m}^2$)</option>
+                <option value="10.0" selected>Residencial Típica / Oficinas ($q = 10.0\text{ kN/m}^2 \approx 1.00\text{ ton/m}^2$)</option>
+                <option value="11.5">Comercial / Educativa ($q = 11.5\text{ kN/m}^2 \approx 1.15\text{ ton/m}^2$)</option>
+                <option value="13.5">Alta Ocupación / Bodega Liviana ($q = 13.5\text{ kN/m}^2 \approx 1.35\text{ ton/m}^2$)</option>
+              </select>
+            </div>
+
+            <!-- Resistencia concreto -->
+            <div class="grid-2cols">
+              <div class="form-group">
+                <label for="col-fc">Resistencia del Concreto ($f'c$):</label>
+                <select id="col-fc" class="form-control">
+                  <option value="21" selected>21 MPa (3000 psi)</option>
+                  <option value="28">28 MPa (4000 psi)</option>
+                  <option value="35">35 MPa (5000 psi)</option>
+                </select>
+              </div>
+              <div class="form-group">
+                <label for="col-forma">Forma de la Sección:</label>
+                <select id="col-forma" class="form-control">
+                  <option value="cuadrada" selected>Cuadrada ($c \times c$)</option>
+                  <option value="rectangular">Rectangular ($c_1 \times c_2$)</option>
+                  <option value="circular">Circular (Diámetro $D$)</option>
+                </select>
+              </div>
+            </div>
+
+            <!-- Ajuste manual adoptado -->
+            <div class="grid-2cols" id="col-user-dims-row">
+              <div class="form-group">
+                <div class="label-row">
+                  <label for="col-c1-user">Dimensión Adoptada $c_1$:</label>
+                  <span class="unit-val"><span id="col-c1-user-val">40</span> cm</span>
+                </div>
+                <input type="range" id="col-c1-user" min="20" max="140" step="5" value="40" class="range-slider">
+              </div>
+              <div class="form-group" id="col-c2-container">
+                <div class="label-row">
+                  <label for="col-c2-user">Dimensión Adoptada $c_2$:</label>
+                  <span class="unit-val"><span id="col-c2-user-val">40</span> cm</span>
+                </div>
+                <input type="range" id="col-c2-user" min="20" max="140" step="5" value="40" class="range-slider">
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Output & Real-time Suggestions Card -->
+        <div class="card results-card">
+          <div class="card-header">
+            <h3>Resultados y Validación de NSR-10</h3>
+          </div>
+          <div class="card-body">
+            <!-- Results KPI row -->
+            <div class="kpi-grid">
+              <div class="kpi-box">
+                <span class="kpi-label">Carga Servicio Acumulada ($P_s$)</span>
+                <span class="kpi-value" id="res-col-ps">1250 kN</span>
+                <span class="kpi-sub" id="res-col-ps-ton">≈ 127.5 tonf</span>
+              </div>
+              <div class="kpi-box">
+                <span class="kpi-label">Área Gruesa Requerida ($A_g$)</span>
+                <span class="kpi-value" id="res-col-ag">1587 cm²</span>
+                <span class="kpi-sub" id="res-col-ag-formula">$P_s / (0.38 \cdot f'c)$</span>
+              </div>
+              <div class="kpi-box highlight">
+                <span class="kpi-label">Sección Sugerida (Comercial)</span>
+                <span class="kpi-value" id="res-col-secc-sug">40 × 40 cm</span>
+                <span class="kpi-sub" id="res-col-area-prop">Área = 1600 cm²</span>
+              </div>
+              <div class="kpi-box">
+                <span class="kpi-label">Dimensión Mínima Normativa</span>
+                <span class="kpi-value" id="res-col-dim-min">25.0 cm</span>
+                <span class="kpi-sub" id="res-col-norma-art">NSR-10 C.21.3.6 (DMO)</span>
+              </div>
+            </div>
+
+            <!-- Interactive Vector Diagram -->
+            <div class="diagram-wrapper">
+              <div class="diagram-title">Esquema de Sección Transversal de Columna</div>
+              <svg id="svg-columna" class="structural-svg" viewBox="0 0 320 220"></svg>
+            </div>
+
+            <!-- Checks & Warnings Checklist -->
+            <div class="compliance-checklist" id="col-checks-list">
+              <!-- Rendered via JS -->
+            </div>
+
+            <!-- Constructive Recommendations Box -->
+            <div class="engineering-advice-box" id="col-advice-box">
+              <!-- Rendered via JS -->
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ========================================== -->
+    <!-- TAB 3: PREDIMENSIONAMIENTO DE LOSA MACIZA  -->
+    <!-- ========================================== -->
+    <section id="tab-losa-maciza" class="tab-panel">
+      <div class="panel-header">
+        <div>
+          <h2>Predimensionamiento de Losas Macizas de Concreto</h2>
+          <p class="panel-desc">Calcula el espesor mínimo para losas macizas en una dirección (NSR-10 Tabla C.9.5(a)) o en dos direcciones apoyadas sobre vigas rígidas (NSR-10 C.9.5.3).</p>
+        </div>
+        <span class="code-ref">NSR-10 Art. C.9.5.2 & C.9.5.3</span>
+      </div>
+
+      <div class="calc-grid">
+        <!-- Input Parameters Card -->
+        <div class="card inputs-card">
+          <div class="card-header">
+            <h3>Geometría del Tablero de Losa</h3>
+          </div>
+          <div class="card-body">
+            <!-- Luces en planta -->
+            <div class="grid-2cols">
+              <div class="form-group">
+                <div class="label-row">
+                  <label for="losa-m-lx">Luz Corta ($L_x$):</label>
+                  <span class="unit-val"><span id="losa-m-lx-val">4.00</span> m</span>
+                </div>
+                <input type="range" id="losa-m-lx" min="1.5" max="9.0" step="0.2" value="4.0" class="range-slider">
+              </div>
+              <div class="form-group">
+                <div class="label-row">
+                  <label for="losa-m-ly">Luz Larga ($L_y$):</label>
+                  <span class="unit-val"><span id="losa-m-ly-val">5.00</span> m</span>
+                </div>
+                <input type="range" id="losa-m-ly" min="1.5" max="12.0" step="0.2" value="5.0" class="range-slider">
+              </div>
+            </div>
+
+            <div class="alert-info-box" id="losa-m-tipo-comportamiento">
+              Comportamiento: <strong>Losa en Dos Direcciones</strong> ($Ly / Lx = 1.25 \le 2.0$)
+            </div>
+
+            <!-- Condición de Apoyo -->
+            <div class="form-group">
+              <label for="losa-m-apoyo">Condición de Apoyo del Tablero:</label>
+              <select id="losa-m-apoyo" class="form-control">
+                <option value="simplemente">Simplemente apoyada en los bordes</option>
+                <option value="un-continuo" selected>Un borde continuo / Losa de borde</option>
+                <option value="ambos-continuos">Bordes interiores continuos</option>
+                <option value="voladizo">Losa en voladizo (Balcón)</option>
+              </select>
+            </div>
+
+            <!-- Resistencia de materiales -->
+            <div class="grid-2cols">
+              <div class="form-group">
+                <label for="losa-m-fc">Concreto ($f'c$):</label>
+                <select id="losa-m-fc" class="form-control">
+                  <option value="21" selected>21 MPa</option>
+                  <option value="28">28 MPa</option>
+                </select>
+              </div>
+              <div class="form-group">
+                <label for="losa-m-fy">Acero ($f_y$):</label>
+                <select id="losa-m-fy" class="form-control">
+                  <option value="420" selected>420 MPa</option>
+                  <option value="280">280 MPa</option>
+                </select>
+              </div>
+            </div>
+
+            <!-- Espesor Adoptado -->
+            <div class="form-group">
+              <div class="label-row">
+                <label for="losa-m-h-user">Espesor Adoptado ($h$):</label>
+                <span class="unit-val"><span id="losa-m-h-user-val">12</span> cm</span>
+              </div>
+              <input type="range" id="losa-m-h-user" min="7" max="30" step="1" value="12" class="range-slider">
+            </div>
+          </div>
+        </div>
+
+        <!-- Output & Real-time Suggestions Card -->
+        <div class="card results-card">
+          <div class="card-header">
+            <h3>Espesor Requerido y Evaluaciones</h3>
+          </div>
+          <div class="card-body">
+            <!-- Results KPI row -->
+            <div class="kpi-grid">
+              <div class="kpi-box">
+                <span class="kpi-label">Espesor Teórico Mínimo</span>
+                <span class="kpi-value" id="res-losa-m-hcalc">10.0 cm</span>
+                <span class="kpi-sub" id="res-losa-m-formula">Perímetro / 180</span>
+              </div>
+              <div class="kpi-box highlight">
+                <span class="kpi-label">Espesor Comercial Sugerido</span>
+                <span class="kpi-value" id="res-losa-m-hsug">12.0 cm</span>
+                <span class="kpi-sub">Mínimo constructivo recomendado</span>
+              </div>
+              <div class="kpi-box">
+                <span class="kpi-label">Peso Propio de la Losa</span>
+                <span class="kpi-value" id="res-losa-m-peso">2.88 kN/m²</span>
+                <span class="kpi-sub">Para $\gamma_{c} = 24\text{ kN/m}^3$</span>
+              </div>
+              <div class="kpi-box">
+                <span class="kpi-label">Acero Temp. Mínimo ($As_{min}$)</span>
+                <span class="kpi-value" id="res-losa-m-asmin">2.16 cm²/m</span>
+                <span class="kpi-sub">NSR-10 C.7.12 ($0.0018 \cdot b \cdot h$)</span>
+              </div>
+            </div>
+
+            <!-- Interactive Vector Diagram -->
+            <div class="diagram-wrapper">
+              <div class="diagram-title">Detalle de Sección de Losa Maciza</div>
+              <svg id="svg-losa-maciza" class="structural-svg" viewBox="0 0 320 180"></svg>
+            </div>
+
+            <!-- Checks & Warnings Checklist -->
+            <div class="compliance-checklist" id="losa-m-checks-list">
+              <!-- Rendered via JS -->
+            </div>
+
+            <!-- Constructive Recommendations Box -->
+            <div class="engineering-advice-box" id="losa-m-advice-box">
+              <!-- Rendered via JS -->
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ========================================== -->
+    <!-- TAB 4: PREDIMENSIONAMIENTO DE LOSA ALIGERADA-->
+    <!-- ========================================== -->
+    <section id="tab-losa-aligerada" class="tab-panel">
+      <div class="panel-header">
+        <div>
+          <h2>Predimensionamiento de Losas Aligeradas (Nervadas en una dirección)</h2>
+          <p class="panel-desc">El sistema de entrepiso más extendido en Colombia. Evalúa la altura total ($h$), torta de compresión ($h_f$), viguetas ($b_w$), separación entre nervios y riostras transversales.</p>
+        </div>
+        <span class="code-ref">NSR-10 Arts. C.8.13, C.9.5(a), C.8.13.3</span>
+      </div>
+
+      <div class="calc-grid">
+        <!-- Input Parameters Card -->
+        <div class="card inputs-card">
+          <div class="card-header">
+            <h3>Geometría y Parámetros del Entrepiso</h3>
+          </div>
+          <div class="card-body">
+            <!-- Luz libre de las viguetas -->
+            <div class="form-group">
+              <div class="label-row">
+                <label for="losa-a-luz">Luz Libre de las Viguetas ($L$):</label>
+                <span class="unit-val"><span id="losa-a-luz-val">5.50</span> m</span>
+              </div>
+              <input type="range" id="losa-a-luz" min="2.5" max="11.0" step="0.25" value="5.5" class="range-slider">
+              <div class="quick-inputs">
+                <button type="button" class="btn-chip" onclick="setSlider('losa-a-luz', 4.0)">4.0 m</button>
+                <button type="button" class="btn-chip" onclick="setSlider('losa-a-luz', 5.0)">5.0 m</button>
+                <button type="button" class="btn-chip" onclick="setSlider('losa-a-luz', 6.0)">6.0 m</button>
+                <button type="button" class="btn-chip" onclick="setSlider('losa-a-luz', 7.5)">7.5 m</button>
+              </div>
+            </div>
+
+            <!-- Condición de Apoyo -->
+            <div class="form-group">
+              <label for="losa-a-apoyo">Condición de Continuidad (Tabla C.9.5(a)):</label>
+              <select id="losa-a-apoyo" class="form-control">
+                <option value="16">Simplemente apoyada ($h = L / 16$)</option>
+                <option value="18.5" selected>Un extremo continuo ($h = L / 18.5$)</option>
+                <option value="21">Ambos extremos continuos ($h = L / 21$)</option>
+                <option value="8">En voladizo ($h = L / 8$)</option>
+              </select>
+            </div>
+
+            <!-- Material de Aligeramiento -->
+            <div class="form-group">
+              <label for="losa-a-aligerante">Elemento Aligerante Tradicional Colombiano:</label>
+              <select id="losa-a-aligerante" class="form-control">
+                <option value="icopor" selected>Poliestireno expandido (Icopor) - Muy ligero (~0.15 kN/m²)</option>
+                <option value="bloque">Bloque de arcilla perforado (Casetón cerámico) (~1.0 kN/m²)</option>
+                <option value="guadua">Casetón de esterilla de guadua / madera (Típico Eje Cafetero)</option>
+                <option value="metalico">Cajón metálico recuperable (Viguetas vistas)</option>
+              </select>
+            </div>
+
+            <!-- Elementos de la sección -->
+            <div class="grid-2cols">
+              <div class="form-group">
+                <div class="label-row">
+                  <label for="losa-a-h-user">Altura Total Adoptada ($h$):</label>
+                  <span class="unit-val"><span id="losa-a-h-user-val">35</span> cm</span>
+                </div>
+                <input type="range" id="losa-a-h-user" min="20" max="65" step="5" value="35" class="range-slider">
+              </div>
+              <div class="form-group">
+                <div class="label-row">
+                  <label for="losa-a-hf-user">Torta Superior ($h_f$):</label>
+                  <span class="unit-val"><span id="losa-a-hf-user-val">5.0</span> cm</span>
+                </div>
+                <input type="range" id="losa-a-hf-user" min="4.0" max="10.0" step="0.5" value="5.0" class="range-slider">
+              </div>
+            </div>
+
+            <div class="grid-2cols">
+              <div class="form-group">
+                <div class="label-row">
+                  <label for="losa-a-bw-user">Ancho del Nervio ($b_w$):</label>
+                  <span class="unit-val"><span id="losa-a-bw-user-val">10</span> cm</span>
+                </div>
+                <input type="range" id="losa-a-bw-user" min="8" max="25" step="1" value="10" class="range-slider">
+              </div>
+              <div class="form-group">
+                <div class="label-row">
+                  <label for="losa-a-s-user">Intereje entre Nervios ($S$):</label>
+                  <span class="unit-val"><span id="losa-a-s-user-val">60</span> cm</span>
+                </div>
+                <input type="range" id="losa-a-s-user" min="40" max="100" step="5" value="60" class="range-slider">
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Output & Real-time Suggestions Card -->
+        <div class="card results-card">
+          <div class="card-header">
+            <h3>Resultados y Verificación Técnica NSR-10</h3>
+          </div>
+          <div class="card-body">
+            <!-- Results KPI row -->
+            <div class="kpi-grid">
+              <div class="kpi-box">
+                <span class="kpi-label">Peralte Mínimo Normativo</span>
+                <span class="kpi-value" id="res-losa-a-hmin">29.7 cm</span>
+                <span class="kpi-sub">L / 18.5 (Tabla C.9.5(a))</span>
+              </div>
+              <div class="kpi-box highlight">
+                <span class="kpi-label">Peralte Comercial Sugerido</span>
+                <span class="kpi-value" id="res-losa-a-hsug">35.0 cm</span>
+                <span class="kpi-sub">Redondeado a 5 cm superior</span>
+              </div>
+              <div class="kpi-box">
+                <span class="kpi-label">Torta Mínima Requerida</span>
+                <span class="kpi-value" id="res-losa-a-hfmin">5.0 cm</span>
+                <span class="kpi-sub">$\max(5\text{ cm}, S_{libre}/12)$</span>
+              </div>
+              <div class="kpi-box highlight">
+                <span class="kpi-label">Riostras Transversales (C.8.13.3)</span>
+                <span class="kpi-value" id="res-losa-a-riostras">1 intermedia</span>
+                <span class="kpi-sub" id="res-losa-a-riostras-sub">Obligatoria para $L > 4.0\text{ m}$</span>
+              </div>
+            </div>
+
+            <!-- Interactive Vector Diagram -->
+            <div class="diagram-wrapper">
+              <div class="diagram-title">Corte Transversal del Sistema Aligerado (Viguetas y Casetón)</div>
+              <svg id="svg-losa-aligerada" class="structural-svg" viewBox="0 0 340 190"></svg>
+            </div>
+
+            <!-- Checks & Warnings Checklist -->
+            <div class="compliance-checklist" id="losa-a-checks-list">
+              <!-- Rendered via JS -->
+            </div>
+
+            <!-- Constructive Recommendations Box -->
+            <div class="engineering-advice-box" id="losa-a-advice-box">
+              <!-- Rendered via JS -->
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ========================================== -->
+    <!-- TAB 5: GUÍA DE CRITERIOS NSR-10 & SÍNTESIS -->
+    <!-- ========================================== -->
+    <section id="tab-normativa" class="tab-panel">
+      <div class="panel-header">
+        <div>
+          <h2>Compendio Normativo y Criterios Mínimos de la NSR-10</h2>
+          <p class="panel-desc">Resumen didáctico de los artículos fundamentales de la Norma Colombiana de Diseño y Construcción Sismo Resistente (NSR-10) para predimensionamiento de edificaciones en concreto reforzado.</p>
+        </div>
+        <span class="code-ref">Título A (Requisitos Sísmicos) & Título C (Concreto Estructural)</span>
+      </div>
+
+      <div class="norma-grid">
+        <!-- Card 1: Comparativa DMI vs DMO vs DES -->
+        <div class="norma-card">
+          <div class="norma-card-header">
+            <h3>1. Grados de Capacidad de Disipación de Energía Sísmica</h3>
+          </div>
+          <div class="norma-card-body">
+            <table class="table-norma">
+              <thead>
+                <tr>
+                  <th>Parámetro</th>
+                  <th>DMI (Mínima)</th>
+                  <th>DMO (Moderada)</th>
+                  <th>DES (Especial)</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td><strong>Amenaza Sísmica</strong></td>
+                  <td>Baja ($A_a, A_v \le 0.10$)</td>
+                  <td>Intermedia ($0.10 < A_a, A_v \le 0.20$)</td>
+                  <td>Alta ($A_a, A_v > 0.20$)</td>
+                </tr>
+                <tr>
+                  <td><strong>Ciudades de Referencia</strong></td>
+                  <td>Leticia, Mitú, San Andrés</td>
+                  <td>Barranquilla, Cartagena, Tunja, Santa Marta</td>
+                  <td>Bogotá*, Cali, Medellín*, Bucaramanga, Pasto</td>
+                </tr>
+                <tr>
+                  <td><strong>Dimensión Mínima Columna</strong></td>
+                  <td>$\ge 200\text{ mm}$ ($20\text{ cm}$)</td>
+                  <td>$\ge 250\text{ mm}$ ($25\text{ cm}$)</td>
+                  <td>$\ge 300\text{ mm}$ ($30\text{ cm}$)</td>
+                </tr>
+                <tr>
+                  <td><strong>Área Mínima Columna</strong></td>
+                  <td>$\ge 400\text{ cm}^2$</td>
+                  <td>$\ge 625\text{ cm}^2$ ($25 \times 25$)</td>
+                  <td>$\ge 900\text{ cm}^2$ ($30 \times 30$)</td>
+                </tr>
+                <tr>
+                  <td><strong>Relación $b/h$ Columna</strong></td>
+                  <td>Sin restricción severa</td>
+                  <td>No menor a 0.40 recomendada</td>
+                  <td>$\ge 0.40$ obligatoria</td>
+                </tr>
+                <tr>
+                  <td><strong>Ancho Mínimo Viga ($b_w$)</strong></td>
+                  <td>$\ge 150 - 200\text{ mm}$</td>
+                  <td>$\ge 200\text{ mm}$ ($20\text{ cm}$)</td>
+                  <td>$\ge 250\text{ mm}$ ($25\text{ cm}$)</td>
+                </tr>
+                <tr>
+                  <td><strong>Relación Viga $b_w/h$</strong></td>
+                  <td>Recomendada $\ge 0.30$</td>
+                  <td>$\ge 0.30$ obligatoria</td>
+                  <td>$\ge 0.30$ obligatoria</td>
+                </tr>
+                <tr>
+                  <td><strong>Luz libre viga vs peralte</strong></td>
+                  <td>Recomendada $L_n \ge 4d$</td>
+                  <td>$L_n \ge 4d$ (C.21.3.5.1)</td>
+                  <td>$L_n \ge 4d$ (C.21.5.1.1)</td>
+                </tr>
+              </tbody>
+            </table>
+            <p class="footnote">* Nota: Aunque Bogotá y Medellín tienen $A_a=0.15$, por su sistema estructural y microzonificación sísmica la mayoría de edificios de altura intermedia a alta se diseñan bajo requisitos DMO o DES.</p>
+          </div>
+        </div>
+
+        <!-- Card 2: Fórmulas de Deflexión Tabla C.9.5(a) -->
+        <div class="norma-card">
+          <div class="norma-card-header">
+            <h3>2. Espesores Mínimos para Control de Deflexiones (Tabla C.9.5(a))</h3>
+          </div>
+          <div class="norma-card-body">
+            <p>Se aplican a elementos de concreto reforzado no preesforzados que no soporten ni estén ligados a particiones que puedan dañarse por deflexiones grandes:</p>
+            <div class="table-responsive">
+              <table class="table-norma">
+                <thead>
+                  <tr>
+                    <th>Elemento Estructural</th>
+                    <th>Simplemente Apoyado</th>
+                    <th>Un Extremo Continuo</th>
+                    <th>Ambos Continuos</th>
+                    <th>En Voladizo</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr>
+                    <td><strong>Losas macizas en una dirección</strong></td>
+                    <td>$L / 20$</td>
+                    <td>$L / 24$</td>
+                    <td>$L / 28$</td>
+                    <td>$L / 10$</td>
+                  </tr>
+                  <tr>
+                    <td><strong>Vigas o losas nervadas</strong></td>
+                    <td>$L / 16$</td>
+                    <td>$L / 18.5$</td>
+                    <td>$L / 21$</td>
+                    <td>$L / 8$</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+            <p class="sub-rule"><strong>Factor de modificación por fluencia:</strong> Para aceros con $f_y \neq 420\text{ MPa}$, multiplicar el valor obtenido por $(0.4 + f_y / 700)$.</p>
+          </div>
+        </div>
+
+        <!-- Card 3: Requisitos de Losas Nervadas C.8.13 -->
+        <div class="norma-card">
+          <div class="norma-card-header">
+            <h3>3. Requisitos Geométricos para Losas Nervadas (NSR-10 C.8.13)</h3>
+          </div>
+          <div class="norma-card-body">
+            <ul class="norma-bullet-list">
+              <li><strong>Ancho de las nervaduras (C.8.13.2):</strong> No menor a $100\text{ mm}$ ($10\text{ cm}$) en la parte superior, y un ancho promedio no menor a $100\text{ mm}$. Altura no mayor a 5 veces el ancho promedio.</li>
+              <li><strong>Espaciamiento libre entre nervaduras (C.8.13.1.1):</strong> No debe ser mayor a $750\text{ mm}$ ($75\text{ cm}$).</li>
+              <li><strong>Espesor de la torta superior (C.8.13.5.2):</strong> No debe ser menor de $50\text{ mm}$ ($5.0\text{ cm}$) ni menor a $1/12$ de la distancia libre entre las nervaduras.</li>
+              <li><strong>Viguetas transversales de repartición / Riostras (C.8.13.3.1):</strong> Cuando la luz libre de las nervaduras excede $4.0\text{ m}$, debe disponerse al menos de una riostra intermedia en el centro del vano; si excede $6.0\text{ m}$, deben colocarse al menos dos riostras.</li>
+            </ul>
+          </div>
+        </div>
+
+        <!-- Card 4: Tips para Barranquilla y la Costa Caribe -->
+        <div class="norma-card">
+          <div class="norma-card-header">
+            <h3>4. Criterios Locales: Práctica Constructiva en Barranquilla (CUC)</h3>
+          </div>
+          <div class="norma-card-body">
+            <div class="caribe-tips">
+              <div class="tip-item">
+                <span class="tip-badge">Clima & Agresión Marina</span>
+                <p>Barranquilla y las ciudades costeras del Atlántico presentan alta salinidad y humedad relativa. Aplicar recubrimientos mínimos para concreto expuesto a la intemperie (NSR-10 C.7.7): mínimo <strong>4.0 cm a 5.0 cm</strong> en vigas y columnas para proteger el acero contra la corrosión por cloruros.</p>
+              </div>
+              <div class="tip-item">
+                <span class="tip-badge">Muros de Bloque de Cemento o Arcilla</span>
+                <p>En la región Caribe es muy frecuente la mampostería no confinada de bloque hueco. Si la viga flexiona excesivamente, los muros se fisuran en diagonal a $45^\circ$. Por ello, se recomienda peraltar las vigas con $h \approx L / 10$ a $L / 12$ en lugar de limitarse al valor estricto de la norma.</p>
+              </div>
+              <div class="tip-item">
+                <span class="tip-badge">Criterio Columna Fuerte - Viga Débil</span>
+                <p>NSR-10 C.21 exige que las columnas posean mayor capacidad a flexión que las vigas que en ellas concurren ($\sum M_{nc} \ge 1.2 \sum M_{nb}$ en DES). Nunca proyectar columnas de menores dimensiones transversales que las vigas que reciben.</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+  </main>
+
+  <!-- Printable Technical Report Sheet (Hidden on screen, visible during Print / Export) -->
+  <div id="print-report-sheet" class="print-only">
+    <div class="print-header">
+      <div class="print-logo-text">
+        <h2>UNIVERSIDAD DE LA COSTA (CUC)</h2>
+        <h3>FACULTAD DE INGENIERÍA • PROGRAMA DE INGENIERÍA CIVIL</h3>
+        <p>MEMORIA RESUMEN DE PREDIMENSIONAMIENTO ESTRUCTURAL (NSR-10)</p>
+      </div>
+      <div class="print-meta">
+        <p><strong>Estudiante:</strong> Jose (8vo Semestre)</p>
+        <p><strong>Ubicación:</strong> Barranquilla, Atlántico, Colombia</p>
+        <p><strong>Fecha:</strong> <span id="print-date"></span></p>
+        <p><strong>Zona / Disipación:</strong> <span id="print-seismic-info">DMO</span></p>
+      </div>
+    </div>
+    <hr class="print-divider">
+
+    <div class="print-content" id="print-content-body">
+      <!-- Injected dynamically via JS before printing -->
+    </div>
+
+    <div class="print-signatures">
+      <div class="sig-box">
+        <div class="sig-line"></div>
+        <p>Jose - Estudiante de Ingeniería Civil<br>Universidad de la Costa CUC</p>
+      </div>
+      <div class="sig-box">
+        <div class="sig-line"></div>
+        <p>Docente Revisor / Asignatura Estructuras<br>NSR-10 Colombia</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- Footer -->
+  <footer class="app-footer">
+    <div class="footer-container">
+      <p>Desarrollado para el proyecto académico de <strong>Jose</strong> • 8vo Semestre de Ingeniería Civil, <strong>Universidad de la Costa (CUC)</strong>, Barranquilla, Colombia.</p>
+      <p class="disclaimer">Basado en los lineamientos de la <em>NSR-10 (Reglamento Colombiano de Construcción Sismo Resistente, Ley 400 de 1997 / Decreto 926 de 2010)</em>. Este aplicativo proporciona predimensionamientos de orden preliminar sujetos al diseño definitivo y verificación por computador.</p>
+    </div>
+  </footer>
+
+  <script src="script.js"></script>
+</body>
+</html>
